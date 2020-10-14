@@ -45,19 +45,19 @@ try:
         for line in f:
             line = line.strip()
 
-if line == '' or line[0] == "#":
-    continue
+            if line == '' or line[0] == "#":
+                continue
 
-try:
-    str_value = line.split("#")[0]
-    value = int(str_value, 10)
+    try:
+        str_value = line.split("#")[0]
+        value = int(str_value, 10)
 
-except ValueError:
-    print(f"Invalid number: {str_value}")
-    sys.exit(1)
+    except ValueError:
+        print(f"Invalid number: {str_value}")
+        sys.exit(1)
 
-memory[address] = value
-address += 1
+    memory[address] = value
+    address += 1
 
 except FileNotFoundError:
     print(f"File not found: {sys.argv[1]}")
