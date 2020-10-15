@@ -7,6 +7,8 @@ HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 
 class CPU:
@@ -17,10 +19,10 @@ class CPU:
         self.reg = [0] * 8
         self.ram = [0] * 256
         self.pc = 0  # PROGRAM COUNTER
-        self.ir = 0  # INSTRUCTION REGISTER
-        self.mar = 0  # MEMORY ADDRESS REGISTER
+        # self.ir = 0  # INSTRUCTION REGISTER
+        # self.mar = 0  # MEMORY ADDRESS REGISTER
 
-    def ram_write(self, value, address):
+    def ram_write(self, address, value):
         """
         Writes the value to the address passed in.
         Gets the address through the pc register
@@ -80,7 +82,7 @@ class CPU:
         #     address += 1
 
     def alu(self, op, reg_a, reg_b):
-        """ALU operations."""
+        """ALU (arithmetic logic unit) operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
@@ -112,11 +114,12 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
+        SP = 7
         halted = False
 
         # while running, get instruction from program counter address memory
         while not halted:
-            instruction = self.ram[self.pc]
+            instruction = self.ram_read(self.pc)
 
             # get next 2 bytes of data as placeholders for instruction to use
             operand_a = self.ram_read(self.pc + 1)
@@ -129,14 +132,35 @@ class CPU:
             elif instruction == LDI:  # set value of the register to an integer
                 # operand_a is the register number
                 # operand_b is the value to set the register to
+                # self.trace()
                 self.reg[operand_a] = operand_b
                 self.pc += 3
             elif instruction == PRN:  # prints numeric value stored in given register
                 # operand_a is the register number
+                # self.trace()
                 print(self.reg[operand_a])
                 self.pc += 2
             elif instruction == MUL:  # Multiplies reg_a * reg_b
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
+            elif instruction == PUSH:
+                '''
+                1. Decrement the `SP`.
+                2. Copy the value in the given register to the address pointed to by
+                `SP`. 
+                '''
+                # self.trace()
+                SP -= 1
+                self.ram_write(SP, self.reg[operand_a])
+                self.pc += 2
+            elif instruction == POP:
+                '''
+                1. Copy the value from the address pointed to by `SP` to the given register.
+                2. Increment `SP`.
+                '''
+                # self.trace()
+                self.reg[operand_a] = self.ram[SP]
+                SP += 1
+                self.pc += 2
             else:
                 print(f"Instruction '{instruction}' not found")
