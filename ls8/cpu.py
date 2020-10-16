@@ -9,6 +9,10 @@ PRN = 0b01000111
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+ADD = 0b10100000
+SUB = 0b10100001
 
 
 class CPU:
@@ -86,9 +90,10 @@ class CPU:
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
-        # elif op == "SUB": etc
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -143,6 +148,12 @@ class CPU:
             elif instruction == MUL:  # Multiplies reg_a * reg_b
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
+            elif instruction == ADD:
+                self.alu("ADD", operand_a, operand_b)
+                self.pc += 3
+            elif instruction == SUB:
+                self.alu("SUB", operand_a, operand_b)
+                self.pc += 3
             elif instruction == PUSH:
                 '''
                 1. Decrement the `SP`.
@@ -162,5 +173,21 @@ class CPU:
                 self.reg[operand_a] = self.ram[SP]
                 SP += 1
                 self.pc += 2
+            elif instruction == CALL:
+                print("-- CALL --")
+                value = self.pc + 2
+                SP -= 1
+                self.ram_write(SP, value)
+                self.pc = self.reg[operand_a]
+            elif instruction == RET:
+                '''
+                Pop the value from the top of the stack and store it in the `PC`.
+                '''
+                print("-- RET --")
+                self.pc = self.ram[SP]
+                SP += 1
+                # do not increment pc in RET
             else:
-                print(f"Instruction '{instruction}' not found")
+                print(
+                    f"Instruction '{instruction:08b}' not found at address {self.pc}")
+                sys.exit(1)                     # ^ prints out in binary
