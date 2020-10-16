@@ -13,6 +13,14 @@ CALL = 0b01010000
 RET = 0b00010001
 ADD = 0b10100000
 SUB = 0b10100001
+# SPRINT
+CMP = 0b10100111  # Compare the values in two registers.
+JMP = 0b01010100  # Jump to the address stored in the given register.
+JEQ = 0b01010101
+# If `equal` flag is set (true), jump to the address stored in the given register.
+JNE = 0b01010110
+# If `E` flag is clear (false, 0), jump to the address stored in the given
+# register.
 
 
 class CPU:
@@ -25,6 +33,7 @@ class CPU:
         self.pc = 0  # PROGRAM COUNTER
         # self.ir = 0  # INSTRUCTION REGISTER
         # self.mar = 0  # MEMORY ADDRESS REGISTER
+        self.FL = 0b00000000  # FLAG
 
     def ram_write(self, address, value):
         """
@@ -94,6 +103,16 @@ class CPU:
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "CMP":
+            self.FL = 0b00000000
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.FL = 0b00000001  # E(qual)
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.FL = 0b00000010  # G(reater than)
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.FL = 0b00000100  # L(ess than)
+            else:
+                print("ALU CMP OP NOT FOUND")
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -174,7 +193,7 @@ class CPU:
                 SP += 1
                 self.pc += 2
             elif instruction == CALL:
-                print("-- CALL --")
+                # print("-- CALL --")
                 value = self.pc + 2
                 SP -= 1
                 self.ram_write(SP, value)
@@ -183,11 +202,24 @@ class CPU:
                 '''
                 Pop the value from the top of the stack and store it in the `PC`.
                 '''
-                print("-- RET --")
+                # print("-- RET --")
                 self.pc = self.ram[SP]
                 SP += 1
                 # do not increment pc in RET
+            ### SPRINT CHALLENGE ###
+            elif instruction == CMP:
+                self.alu("CMP", operand_a, operand_b)
+            elif instruction == JMP:
+                # Set the `PC` to the address stored in the given register.
+                self.pc = self.reg[operand_a]
+            elif instruction == JEQ:
+                if self.FL == 0b00000001:
+                    self.pc = self.reg[operand_a]
+            elif instruction == JNE:
+                if self.FL != 0b00000001:
+                    self.pc = self.reg[operand_a]
             else:
                 print(
                     f"Instruction '{instruction:08b}' not found at address {self.pc}")
-                sys.exit(1)                     # ^ prints out in binary
+                # ^ prints out in binary to 8 places
+                sys.exit(1)
