@@ -33,7 +33,7 @@ class CPU:
         self.pc = 0  # PROGRAM COUNTER
         # self.ir = 0  # INSTRUCTION REGISTER
         # self.mar = 0  # MEMORY ADDRESS REGISTER
-        self.FL = 0b00000000  # FLAG
+        self.FL = 0  # FLAG
 
     def ram_write(self, address, value):
         """
@@ -104,15 +104,13 @@ class CPU:
         elif op == "SUB":
             self.reg[reg_a] -= self.reg[reg_b]
         elif op == "CMP":
-            self.FL = 0b00000000
+            self.FL &= 0x11111000
             if self.reg[reg_a] == self.reg[reg_b]:
                 self.FL = 0b00000001  # E(qual)
-            elif self.reg[reg_a] > self.reg[reg_b]:
+            if self.reg[reg_a] > self.reg[reg_b]:
                 self.FL = 0b00000010  # G(reater than)
-            elif self.reg[reg_a] < self.reg[reg_b]:
+            if self.reg[reg_a] < self.reg[reg_b]:
                 self.FL = 0b00000100  # L(ess than)
-            else:
-                print("ALU CMP OP NOT FOUND")
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -151,75 +149,107 @@ class CPU:
 
             # check for different instruction cases
             if instruction == HLT:  # Halt instruction, exits emulator
+                print("-- HLT --")
                 halted = True
-                self.pc = 0  # set steps counter back to zero
+                # self.pc = 0  # set steps counter back to zero
+
             elif instruction == LDI:  # set value of the register to an integer
                 # operand_a is the register number
                 # operand_b is the value to set the register to
                 # self.trace()
+                print("-- LDI --")
                 self.reg[operand_a] = operand_b
                 self.pc += 3
+
             elif instruction == PRN:  # prints numeric value stored in given register
                 # operand_a is the register number
                 # self.trace()
+                print("-- PRN --")
                 print(self.reg[operand_a])
                 self.pc += 2
+
             elif instruction == MUL:  # Multiplies reg_a * reg_b
+                print("-- MUL --")
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
+
             elif instruction == ADD:
+                print("-- ADD --")
                 self.alu("ADD", operand_a, operand_b)
                 self.pc += 3
+
             elif instruction == SUB:
+                print("-- SUB --")
                 self.alu("SUB", operand_a, operand_b)
                 self.pc += 3
+
             elif instruction == PUSH:
                 '''
                 1. Decrement the `SP`.
                 2. Copy the value in the given register to the address pointed to by
                 `SP`. 
                 '''
+                print("-- PUSH --")
                 # self.trace()
                 SP -= 1
                 self.ram_write(SP, self.reg[operand_a])
                 self.pc += 2
+
             elif instruction == POP:
                 '''
                 1. Copy the value from the address pointed to by `SP` to the given register.
                 2. Increment `SP`.
                 '''
+                print("-- POP --")
                 # self.trace()
                 self.reg[operand_a] = self.ram[SP]
                 SP += 1
                 self.pc += 2
+
             elif instruction == CALL:
-                # print("-- CALL --")
+                print("-- CALL --")
                 value = self.pc + 2
                 SP -= 1
                 self.ram_write(SP, value)
                 self.pc = self.reg[operand_a]
+
             elif instruction == RET:
                 '''
                 Pop the value from the top of the stack and store it in the `PC`.
                 '''
-                # print("-- RET --")
+                print("-- RET --")
                 self.pc = self.ram[SP]
                 SP += 1
+
                 # do not increment pc in RET
             ### SPRINT CHALLENGE ###
             elif instruction == CMP:
+                print("-- CMP --")
                 self.alu("CMP", operand_a, operand_b)
+                self.pc += 3
+
             elif instruction == JMP:
+                print("-- JMP --")
                 # Set the `PC` to the address stored in the given register.
                 self.pc = self.reg[operand_a]
+                # self.pc += 2
+
             elif instruction == JEQ:
+                print("-- JEQ --")
                 if self.FL == 0b00000001:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc += 2
+
             elif instruction == JNE:
-                if self.FL != 0b00000001:
+                print("-- JNE --")
+                if not self.FL & 0b00000001:
                     self.pc = self.reg[operand_a]
+                else:
+                    self.pc += 2
+
             else:
                 print(
                     f"Instruction '{instruction:08b}' not found at address {self.pc}")
-                # ^ prints out in binary to 8 places
+                # ^ :08b prints out in binary to 8 places
                 sys.exit(1)
